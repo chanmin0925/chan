@@ -97,15 +97,18 @@ st.divider()
 # ============================================================
 st.header("그래프 2. 일관객 합계 TOP 5 영화의 날짜별 변화")
 
-# 전체 기간 동안의 일관객 합계가 큰 영화 5편을 선정
-top5_movies = (
-    df.groupby("영화명", as_index=False)["일관객"]
+# 이 기간에 기록된 일관객의 합계가 가장 큰 영화 5편을 선정
+top5 = (
+    df.dropna(subset=["영화명", "일관객"])
+    .groupby("영화명", as_index=False)["일관객"]
     .sum()
     .sort_values("일관객", ascending=False)
-    .head(5)["영화명"]
-    .tolist()
+    .head(5)
 )
 
+top5_movies = top5["영화명"].tolist()
+
+# TOP 5 영화만 골라 날짜별 일관객을 집계
 top5_df = (
     df[df["영화명"].isin(top5_movies)]
     .groupby(["날짜", "영화명"], as_index=False)["일관객"]
@@ -128,7 +131,11 @@ fig_top5 = px.line(
 )
 
 fig_top5.update_traces(
-    hovertemplate="날짜: %{x|%Y-%m-%d}<br>일관객: %{y:,}명<extra>%{fullData.name}</extra>"
+    hovertemplate=(
+        "날짜: %{x|%Y-%m-%d}"
+        "<br>일관객: %{y:,}명"
+        "<extra>%{fullData.name}</extra>"
+    )
 )
 
 fig_top5.update_layout(
@@ -156,8 +163,58 @@ st.empty()
 st.divider()
 
 
+
 # ============================================================
 # 그래프 3
 # ============================================================
-st.header("그래프 3")
+st.header("그래프 3. 날짜별 10위권 일관객 합계")
+
+daily_total = (
+    df.dropna(subset=["날짜", "일관객"])
+    .groupby("날짜", as_index=False)["일관객"]
+    .sum()
+    .sort_values("날짜")
+)
+
+top3_days = daily_total.nlargest(3, "일관객")
+
+fig_daily = px.area(
+    daily_total,
+    x="날짜",
+    y="일관객",
+    title="날짜별 10위권 일관객 합계",
+    labels={"날짜": "날짜", "일관객": "10위권 일관객 합계"},
+)
+
+fig_daily.update_traces(
+    hovertemplate="날짜: %{x|%Y-%m-%d}<br>10위권 일관객 합계: %{y:,}명<extra></extra>"
+)
+
+for _, row in top3_days.iterrows():
+    fig_daily.add_annotation(
+        x=row["날짜"],
+        y=row["일관객"],
+        text=row["날짜"].strftime("%Y-%m-%d"),
+        showarrow=True,
+        arrowhead=2,
+        ax=0,
+        ay=-45,
+        font=dict(size=12),
+    )
+
+fig_daily.update_layout(
+    hovermode="x unified",
+    xaxis=dict(tickformat="%Y-%m-%d"),
+    yaxis=dict(tickformat=",", separatethousands=True),
+)
+
+st.plotly_chart(fig_daily, use_container_width=True)
+st.markdown("**이 그래프로 알 수 있는 것**")
+st.empty()
+st.divider()
+
+# ============================================================
+# 그래프 4
+# ============================================================
+st.header("그래프 4")
 st.info("앞으로 추가할 그래프를 이 구역에 넣습니다.")
