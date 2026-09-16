@@ -258,5 +258,57 @@ st.divider()
 # ============================================================
 # 그래프 5
 # ============================================================
-st.header("그래프 5")
+st.header("그래프 5. 월 × 요일별 일관객 합계")
+
+# 날짜에서 월과 요일을 추출
+heatmap_df = df.dropna(subset=["날짜", "일관객"]).copy()
+heatmap_df["월"] = heatmap_df["날짜"].dt.month
+weekday_order = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
+heatmap_df["요일"] = heatmap_df["날짜"].dt.dayofweek.map(dict(enumerate(weekday_order)))
+
+# 월 × 요일별 10위권 일관객 합계
+heatmap_data = (
+    heatmap_df.groupby(["월", "요일"], as_index=False)["일관객"]
+    .sum()
+    .pivot(index="월", columns="요일", values="일관객")
+    .reindex(index=range(1, 13), columns=weekday_order)
+    .fillna(0)
+)
+
+fig_heatmap = px.imshow(
+    heatmap_data,
+    text_auto=",",
+    aspect="auto",
+    color_continuous_scale="Blues",
+    labels={
+        "x": "요일",
+        "y": "월",
+        "color": "일관객 합계",
+    },
+    title="월 × 요일별 10위권 일관객 합계",
+)
+
+fig_heatmap.update_xaxes(
+    categoryorder="array",
+    categoryarray=weekday_order,
+)
+fig_heatmap.update_yaxes(
+    tickmode="array",
+    tickvals=list(range(1, 13)),
+    ticktext=[f"{month}월" for month in range(1, 13)],
+)
+fig_heatmap.update_traces(
+    hovertemplate="%{y}월 %{x}<br>일관객 합계: %{z:,}명<extra></extra>"
+)
+
+st.plotly_chart(fig_heatmap, use_container_width=True)
+st.markdown("**이 그래프로 알 수 있는 것**")
+st.empty()
+st.divider()
+
+
+# ============================================================
+# 그래프 6
+# ============================================================
+st.header("그래프 6")
 st.info("앞으로 추가할 그래프를 이 구역에 넣습니다.")
